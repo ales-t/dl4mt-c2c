@@ -59,6 +59,9 @@ def main(filename, short_list, src):
         for ii, ww in enumerate(sorted_words):
             worddict[ww] = ii + len(tokens)
 
+    if not short_list:
+        short_list = 0
+
     print 'start dump'
     with open('%s.%d.pkl' % (filename, short_list+len(tokens)), 'wb') as f:
         pkl.dump(worddict, f)
@@ -66,3 +69,6 @@ def main(filename, short_list, src):
     f.close()
     print 'Done'
     print len(worddict)
+
+if __name__ == "__main__":
+    main(sys.argv[1], None, sys.argv[2] == 'src')

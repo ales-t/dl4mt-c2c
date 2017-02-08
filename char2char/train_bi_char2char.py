@@ -11,12 +11,15 @@ from prepare_data import *
 
 def main(job_id, args):
     save_file_name = args.model_name
-    source_dataset = args.data_path + wmts[args.translate]['train'][0][0]
-    target_dataset = args.data_path + wmts[args.translate]['train'][0][1]
-    valid_source_dataset = args.data_path + wmts[args.translate]['dev'][0][0]
-    valid_target_dataset = args.data_path + wmts[args.translate]['dev'][0][1]
-    source_dictionary = args.data_path + wmts[args.translate]['dic'][0][0]
-    target_dictionary = args.data_path + wmts[args.translate]['dic'][0][1]
+    data_root = args.data_path + "/"
+    srclang = '.' + args.source_lang
+    tgtlang = '.' + args.target_lang
+    source_dataset = data_root + args.train_corpus + srclang
+    target_dataset = data_root + args.train_corpus + tgtlang
+    valid_source_dataset = data_root + args.dev_corpus + srclang
+    valid_target_dataset = data_root + args.dev_corpus + tgtlang
+    source_dictionary =  data_root + args.dict + srclang
+    target_dictionary =  data_root + args.dict + tgtlang
 
     print args.model_path, save_file_name
     print source_dataset
@@ -90,7 +93,6 @@ if __name__ == '__main__':
     import sys, time
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-translate', type=str, default="de_en", help="de_en / cs_en / fi_en / ru_en")
     parser.add_argument('-highway', type=int, default=4)
 
     parser.add_argument('-conv_width', type=str, default="1-2-3-4-5-6-7-8")
@@ -130,7 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('-decay_c', type=int, default=0, help="")
     parser.add_argument('-clip_c', type=int, default=1, help="")
 
-    parser.add_argument('-saveFreq', type=int, default=5000, help="")
+    parser.add_argument('-saveFreq', type=int, default=50000, help="")
     parser.add_argument('-sampleFreq', type=int, default=5000, help="")
     parser.add_argument('-dispFreq', type=int, default=1000, help="")
     parser.add_argument('-validFreq', type=int, default=5000, help="")
@@ -140,23 +142,20 @@ if __name__ == '__main__':
     parser.add_argument('-source_word_level', type=int, default=0, help="")
     parser.add_argument('-target_word_level', type=int, default=0, help="")
 
+    parser.add_argument('-data_path', help="where corpora are located", required=True)
+    parser.add_argument('-model_path', help="where to store models", required=True)
+    parser.add_argument('-source_lang', required=True)
+    parser.add_argument('-target_lang', required=True)
+    parser.add_argument('-train_corpus', default="train" help="training corpus filename prefix")
+    parser.add_argument('-dev_corpus', default="dev" help="dev corpus filename prefix")
+    parser.add_argument('-dict', default="dict" help="dictionary filename prefix")
+
     args = parser.parse_args()
-
-    if args.translate == "fi_en":
-        args.n_words_src = 304
-        args.n_words = 302
-
-    if args.translate not in "de_en cs_en fi_en ru_en".split():
-        raise Exception('1')
 
     args.model_name = "bi-char2char"
 
     args.conv_width = [ int(x) for x in args.conv_width.split("-") ]
     args.conv_nkernels = [ int(x) for x in args.conv_nkernels.split("-") ]
-
-    args.model_path = "/misc/kcgscratch1/ChoGroup/jasonlee/dl4mt-c2c/models/" # change accordingly
-    args.data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/wmt15/" # change accordingly
-    args.model_path = args.model_path + args.translate + "/"
 
     print "Model path:", args.model_path
 
