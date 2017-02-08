@@ -146,9 +146,9 @@ if __name__ == '__main__':
     parser.add_argument('-model_path', help="where to store models", required=True)
     parser.add_argument('-source_lang', required=True)
     parser.add_argument('-target_lang', required=True)
-    parser.add_argument('-train_corpus', default="train" help="training corpus filename prefix")
-    parser.add_argument('-dev_corpus', default="dev" help="dev corpus filename prefix")
-    parser.add_argument('-dict', default="dict" help="dictionary filename prefix")
+    parser.add_argument('-train_corpus', default="train", help="training corpus filename prefix")
+    parser.add_argument('-dev_corpus', default="dev", help="dev corpus filename prefix")
+    parser.add_argument('-dict', default="dict", help="dictionary filename prefix")
 
     args = parser.parse_args()
 
