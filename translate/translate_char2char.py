@@ -6,13 +6,15 @@ import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.insert(0, "/misc/kcgscratch1/ChoGroup/jasonlee/dl4mt-c2c/char2char") # change appropriately
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+sys.path.insert(0, dir_path + "/../char2char") # very hack
 
 import numpy
 import cPickle as pkl
 from mixer import *
 
-def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, model_id, silent):
+def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, silent):
 
     from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
     trng = RandomStreams(1234)
@@ -49,16 +51,16 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
 
         idx, x = req[0], req[1]
         if not silent:
-            print "sentence", idx, model_id
+            print "sentence", idx
         seq = _translate(x)
 
         resultqueue.append((idx, seq))
     return
 
-def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
+def main(model, dictionary, dictionary_target, source_file, k=5,
          normalize=False, encoder_chr_level=False,
          decoder_chr_level=False, utf8=False, 
-          model_id=None, silent=False):
+         silent=False):
 
     from char_base import (build_sampler, gen_sample, init_params)
 
@@ -146,21 +148,18 @@ def main(model, dictionary, dictionary_target, source_file, saveto, k=5,
             trans[resp[0]] = resp[1]
             if numpy.mod(idx, 10) == 0:
                 if not silent:
-                    print 'Sample ', (idx+1), '/', n_samples, ' Done', model_id
+                    print 'Sample ', (idx+1), '/', n_samples, ' Done'
         return trans
 
     print 'Translating ', source_file, '...'
     n_samples = _send_jobs(source_file)
     print "jobs sent"
 
-    translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, model_id, silent)
+    translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, silent)
     trans = _seqs2words(_retrieve_jobs(n_samples, silent))
     print "translations retrieved"
 
-    with open(saveto, 'w') as f:
-        print >>f, u'\n'.join(trans).encode('utf-8')
-
-    print "Done", saveto
+    print u'\n'.join(trans).encode('utf-8')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -171,71 +170,28 @@ if __name__ == "__main__":
     parser.add_argument('-utf8', action="store_true", default=True)
     parser.add_argument('-many', action="store_true", default=False) # multilingual model?
     parser.add_argument('-model', type=str) # absolute path to a model (.npz file)
-    parser.add_argument('-translate', type=str, help="de_en / cs_en / fi_en / ru_en") # which language?
-    parser.add_argument('-saveto', type=str, ) # absolute path where the translation should be saved
     parser.add_argument('-which', type=str, help="dev / test1 / test2", default="dev") # if you wish to translate any of development / test1 / test2 file from WMT15, simply specify which one here
     parser.add_argument('-source', type=str, default="") # if you wish to provide your own file to be translated, provide an absolute path to the file to be translated
     parser.add_argument('-silent', action="store_true", default=False) # suppress progress messages
+    parser.add_argument('-source_dict', required=True)
+    parser.add_argument('-target_dict', required=True)
+    parser.add_argument('-input', default="test", help="test file")
 
     args = parser.parse_args()
 
-    which_wmt = None
-    if args.many:
-        which_wmt = "multi-wmt15"
-    else:
-        which_wmt = "wmt15"
-
-    data_path = "/misc/kcgscratch1/ChoGroup/jasonlee/temp_data/%s/" % which_wmt # change appropriately
-
-    if args.which not in "dev test1 test2".split():
-        raise Exception('1')
-
-    if args.translate not in ["de_en", "cs_en", "fi_en", "ru_en"]:
-        raise Exception('1')
-
-    if args.translate == "fi_en" and args.which == "test2":
-        raise Exception('1')
-
-    if args.many:
-        from wmt_path_iso9 import *
-
-        dictionary = wmts['many_en']['dic'][0][0]
-        dictionary_target = wmts['many_en']['dic'][0][1]
-        source = wmts[args.translate][args.which][0][0]
-
-    else:
-        from wmt_path import *
-
-        aa = args.translate.split("_")
-        lang = aa[0]
-        en = aa[1]
-
-        dictionary = "%s%s/train/all_%s-%s.%s.tok.304.pkl" % (lang, en, lang, en, lang)
-        dictionary_target = "%s%s/train/all_%s-%s.%s.tok.300.pkl" % (lang, en, lang, en, en)
-        source = wmts[args.translate][args.which][0][0]
+    dictionary = args.source_dict
+    dictionary_target = args.target_dict
+    source = args.input
 
     char_base = args.model.split("/")[-1]
-
-    dictionary = data_path + dictionary
-    dictionary_target = data_path + dictionary_target
-    source = data_path + source
-
-    if args.source != "":
-        source = args.source
-
-    print "src dict:", dictionary
-    print "trg dict:", dictionary_target
-    print "source:", source
-    print "dest :", args.saveto
 
     print args
 
     time1 = time.time()
     main(args.model, dictionary, dictionary_target, source,
-         args.saveto, k=args.k, normalize=args.n, encoder_chr_level=args.enc_c,
+         k=args.k, normalize=args.n, encoder_chr_level=args.enc_c,
          decoder_chr_level=args.dec_c,
          utf8=args.utf8,
-         model_id=char_base,
          silent=args.silent,
         )
     time2 = time.time()
