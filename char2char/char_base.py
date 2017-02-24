@@ -17,8 +17,8 @@ from mixer import *
 def init_params(options):
     params = OrderedDict()
 
-    print "new char_base initialise..."
-    print "source dictionary size: %d" % options['n_words_src']
+    print >>sys.stderr, "new char_base initialise..."
+    print >>sys.stderr, "source dictionary size: %d" % options['n_words_src']
     # embedding
     params['Wemb'] = norm_weight(options['n_words_src'], options['dim_word_src'])
     params['Wemb_dec'] = norm_weight(options['n_words'], options['dim_word'])
@@ -47,7 +47,7 @@ def init_params(options):
                                 nin=ctxdim,
                                 nout=options['dec_dim'])
 
-    print "target dictionary size: %d" % options['n_words']
+    print >>sys.stderr, "target dictionary size: %d" % options['n_words']
     # decoder
     params = get_layer('two_layer_gru_decoder')[0](options, params,
                                                    prefix='decoder',
@@ -109,7 +109,7 @@ def build_model(tparams, options):
     # hw_out.shape = (maxlen_x_pad/pool_stride, n_samples, sum(nkernels))
 
     if options['dropout_gru']:
-        print "Dropout before GRUs."
+        print >>sys.stderr, "Dropout before GRUs."
         hw_out = hw_out * trng.binomial(hw_out.shape, p=0.5, n=1, dtype=hw_out.dtype) * 2.0
 
     # pass through gru layer, recurrence here
@@ -157,7 +157,7 @@ def build_model(tparams, options):
     logit = tensor.tanh(logit_rnn + logit_prev + logit_ctx)
 
     if options['dropout_softmax']:
-        print "Dropout before Softmax"
+        print >>sys.stderr, "Dropout before Softmax"
         logit = logit * trng.binomial(logit.shape, p=0.5, n=1, dtype=logit.dtype) * 2.0
 
     logit = get_layer('ff')[1](tparams, logit, options,
@@ -203,10 +203,10 @@ def build_sampler(tparams, options, trng, use_noise):
     init_state_word = get_layer('ff')[1](tparams, ctx_mean, options,
                                          prefix='ff_init_state_word', activ='tanh')
 
-    print 'Building f_init...',
+    print >>sys.stderr, 'Building f_init...',
     outs = [init_state_char, init_state_word, ctx]
     f_init = theano.function([x], outs, name='f_init', profile=profile)
-    print 'Done'
+    print >>sys.stderr, 'Done'
 
     y = tensor.vector('y_sampler', dtype='int64')
     init_state_char = tensor.matrix('init_state_char', dtype='float32')
@@ -254,11 +254,11 @@ def build_sampler(tparams, options, trng, use_noise):
     next_sample = trng.multinomial(pvals=next_probs).argmax(1)
 
     # next word probability
-    print 'Building f_next...',
+    print >>sys.stderr, 'Building f_next...',
     inps = [y, ctx, init_state_char, init_state_word]
     outs = [next_probs, next_sample, next_state_char, next_state_word]
     f_next = theano.function(inps, outs, name='f_next', profile=profile)
-    print 'Done'
+    print >>sys.stderr, 'Done'
 
     return f_init, f_next
 
