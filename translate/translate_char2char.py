@@ -51,7 +51,7 @@ def translate_model(jobqueue, resultqueue, model, options, k, normalize, build_s
 
         idx, x = req[0], req[1]
         if not silent:
-            print "sentence", idx
+            print >>sys.stderr, "sentence", idx
         seq = _translate(x)
 
         resultqueue.append((idx, seq))
@@ -148,16 +148,16 @@ def main(model, dictionary, dictionary_target, source_file, k=5,
             trans[resp[0]] = resp[1]
             if numpy.mod(idx, 10) == 0:
                 if not silent:
-                    print 'Sample ', (idx+1), '/', n_samples, ' Done'
+                    print >>sys.stderr, 'Sample ', (idx+1), '/', n_samples, ' Done'
         return trans
 
-    print 'Translating ', source_file, '...'
+    print >>sys.stderr, 'Translating ', source_file, '...'
     n_samples = _send_jobs(source_file)
-    print "jobs sent"
+    print >>sys.stderr, "jobs sent"
 
     translate_model(jobqueue, resultqueue, model, options, k, normalize, build_sampler, gen_sample, init_params, silent)
     trans = _seqs2words(_retrieve_jobs(n_samples, silent))
-    print "translations retrieved"
+    print >>sys.stderr, "translations retrieved"
 
     print u'\n'.join(trans).encode('utf-8')
 
