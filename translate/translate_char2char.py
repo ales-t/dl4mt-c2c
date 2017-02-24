@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     char_base = args.model.split("/")[-1]
 
-    print args
+    print >>sys.stderr, args
 
     time1 = time.time()
     main(args.model, dictionary, dictionary_target, source,
@@ -196,4 +196,4 @@ if __name__ == "__main__":
         )
     time2 = time.time()
     duration = (time2-time1)/float(60)
-    print("Translation took %.2f minutes" % duration)
+    print >>sys.stderr, ("Translation took %.2f minutes" % duration)
